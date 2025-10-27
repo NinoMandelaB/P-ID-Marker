@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - PGHOST=db
+      - PGDATABASE=pid_db
+      - PGUSER=postgres
+      - PGPASSWORD=postgres
+      - PGPORT=5432
+    depends_on:
+      - db
+    volumes:
+      - ./app.py:/app/app.py
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=pid_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
