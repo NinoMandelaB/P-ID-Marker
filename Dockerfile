@@ -19,7 +19,7 @@ COPY app.py .
 EXPOSE 8501
 
 # Health check
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
-# Run the application
-ENTRYPOINT ["sh", "-c", "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0"]
+# Run the application - use Railway's PORT or default to 8501
+CMD streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0
