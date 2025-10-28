@@ -6,6 +6,7 @@ import io
 import psycopg2
 import psycopg2.extras
 import os
+import memoryview
 
 # ----------------------- DATABASE CONNECTION ---------------------------
 def get_db_connection():
@@ -97,7 +98,11 @@ with st.sidebar:
         cur.execute("SELECT pdf_data FROM pid_documents WHERE id = %s;", (selected_pdf_id,))
         pdf_row = cur.fetchone()
         if pdf_row and pdf_row[0]:
-            selected_pdf_bytes = pdf_row[0]
+            pdf_bytes = pdf_row[0]
+            if not isinstance(pdf_bytes, bytes):
+                # Convert from memoryview, bytearray, etc. to bytes
+                pdf_bytes = bytes(pdf_bytes)
+            selected_pdf_bytes = pdf_bytes
         else:
             selected_pdf_bytes = None
     else:
