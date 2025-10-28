@@ -130,7 +130,10 @@ drawing_mode = st.sidebar.selectbox(
 ) if edit_mode else None
 
 stroke_color = st.sidebar.color_picker("Stroke color", "#ff0000") if edit_mode else "#ff0000"
-fill_color = st.sidebar.color_picker("Fill color", "#ff000040") if edit_mode else "#ff000040"
+fill_color = st.sidebar.color_picker("Fill color", "#ffcccc") if edit_mode else "#ffcccc"
+fill_alpha = st.sidebar.slider("Fill alpha", 0, 255, 70) if edit_mode else 70
+fill_color_rgba = f'rgba({int(fill_color[1:3],16)},{int(fill_color[3:5],16)},{int(fill_color[5:7],16)},{fill_alpha/255:.2f})'
+
 stroke_width = st.sidebar.slider("Stroke width", 1, 10, 3) if edit_mode else 3
 
 col1, col2 = st.columns([3, 2])
