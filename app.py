@@ -100,9 +100,9 @@ with st.sidebar:
             selected_pdf_bytes = pdf_row[0]
         else:
             selected_pdf_bytes = None
-else:
-    selected_pdf_id = None
-    selected_pdf_bytes = None
+    else:
+        selected_pdf_id = None
+        selected_pdf_bytes = None
 
 
 # ------------------ MAIN: CANVAS & ANNOTATION --------------------------
