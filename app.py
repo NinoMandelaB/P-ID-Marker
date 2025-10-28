@@ -52,6 +52,8 @@ def init_db():
 
 def pdf_page_to_pil(pdf_bytes: bytes, page_no: int) -> Image.Image:
     with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        if page_no >= doc.page_count:
+            page_no = doc.page_count - 1
         page = doc.load_page(page_no)
         pix = page.get_pixmap(matrix=fitz.Matrix(2,2))  # higher resolution
         img_data = pix.tobytes("png")
@@ -113,13 +115,24 @@ if selected_pdf_bytes is None:
     st.info("Upload or select a P&ID PDF to start annotating.")
     st.stop()
 
-# Page selection
-n_pages = get_pdf_page_count(selected_pdf_bytes)
+# --- PAGE SELECTION and PDF PREVIEW ---
+try:
+    n_pages = get_pdf_page_count(selected_pdf_bytes)
+except Exception as e:
+    st.error(f"Could not read your PDF: {e}")
+    st.stop()
+
 page_no = st.number_input(
     label="P&ID Page", min_value=0, max_value=n_pages-1, value=0
 )
 st.write(f"Page {page_no+1} of {n_pages}")
-pdf_img = pdf_page_to_pil(selected_pdf_bytes, page_no)
+
+try:
+    pdf_img = pdf_page_to_pil(selected_pdf_bytes, page_no)
+    st.image(pdf_img, caption="P&ID Preview (current page)")
+except Exception as e:
+    st.error(f"Could not render image from your PDF: {e}")
+    st.stop()
 
 # --- Drawing controls ---
 edit_mode = st.sidebar.checkbox("Edit Mode", value=False)
@@ -138,7 +151,6 @@ stroke_width = st.sidebar.slider("Stroke width", 1, 10, 3) if edit_mode else 3
 col1, col2 = st.columns([3, 2])
 with col1:
     st.subheader("Annotate P&ID")
-    # Get elements/overlays for this PDF page
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     cur.execute(
         "SELECT * FROM elements WHERE pid_doc_id = %s AND overlay_page = %s;", (selected_pdf_id, page_no)
@@ -156,23 +168,24 @@ with col1:
             "fill": el.get("overlay_color", "rgba(255,204,204,0.3)"),
             "name": str(el['id']),
         })
+    try:
+        canvas_result = st_canvas(
+            fill_color=fill_color_rgba,
+            stroke_width=stroke_width,
+            stroke_color=stroke_color,
+            background_color="#fff",
+            background_image=pdf_img,
+            update_streamlit=True,
+            height=pdf_img.height,
+            width=pdf_img.width,
+            drawing_mode=drawing_mode if edit_mode else None,
+            key=f"canvas_{page_no}_{selected_pdf_id}",
+            initial_drawing={"version": "4.4.0", "objects": overlay_shapes}
+        )
+    except Exception as e:
+        st.error(f"Canvas error: {e}")
+        st.stop()
 
-    canvas_result = st_canvas(
-        fill_color=fill_color_rgba,
-        stroke_width=stroke_width,
-        stroke_color=stroke_color,
-        background_color="#fff",
-        background_image=pdf_img,
-        update_streamlit=True,
-        height=pdf_img.height,
-        width=pdf_img.width,
-        drawing_mode=drawing_mode if edit_mode else None,
-        key=f"canvas_{page_no}_{selected_pdf_id}",
-        initial_drawing={"version": "4.4.0", "objects": overlay_shapes}
-    )
-
-
-    # Handle New Shape Added (edit mode only)
     if edit_mode and canvas_result.json_data and 'objects' in canvas_result.json_data:
         objects = canvas_result.json_data["objects"]
         new_objs = [
@@ -215,7 +228,6 @@ with col1:
                     conn.commit()
                     st.success("Element created and linked to annotation shape. Refresh to see it on canvas.")
 
-    # --- Show element info on shape click (when NOT in edit mode) ---
     if not edit_mode and canvas_result.json_data and 'objects' in canvas_result.json_data:
         clicked_idx = canvas_result.json_data.get("active")
         if (
@@ -242,7 +254,6 @@ with col1:
                     if sel[0]['attachment']:
                         st.sidebar.download_button("Download Attachment", sel[0]['attachment'], sel[0]['attachment_filename'])
 
-# Element Table
 with col2:
     st.subheader("Element Management Table")
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
