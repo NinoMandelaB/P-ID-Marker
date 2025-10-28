@@ -79,13 +79,16 @@ conn = get_db_connection()
 with st.sidebar:
     pdf_upload = st.file_uploader("Upload new P&ID (.pdf)", type=["pdf"], key="pdf_upl")
     if pdf_upload is not None:
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO pid_documents (filename, pdf_data) VALUES (%s, %s) RETURNING id;",
-            (pdf_upload.name, pdf_upload.read())
-        )
-        conn.commit()
-        st.success(f"{pdf_upload.name} uploaded.")
+        if st.button("Save PDF to database", key="save_pdf"):
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO pid_documents (filename, pdf_data) VALUES (%s, %s) RETURNING id;",
+                (pdf_upload.name, pdf_upload.read())
+            )
+            conn.commit()
+            st.success(f"{pdf_upload.name} uploaded.")
+
+
 
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cur.execute("SELECT id, filename FROM pid_documents ORDER BY uploaded_at DESC;")
