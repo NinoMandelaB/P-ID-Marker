@@ -44,7 +44,7 @@ def init_db():
             overlay_x FLOAT,
             overlay_y FLOAT,
             overlay_type VARCHAR(32),
-            overlay_color VARCHAR(32)
+            overlay_color VARCHAR(64)
         );
     """)
     conn.commit()
@@ -133,7 +133,6 @@ stroke_color = st.sidebar.color_picker("Stroke color", "#ff0000") if edit_mode e
 fill_color = st.sidebar.color_picker("Fill color", "#ffcccc") if edit_mode else "#ffcccc"
 fill_alpha = st.sidebar.slider("Fill alpha", 0, 255, 70) if edit_mode else 70
 fill_color_rgba = f'rgba({int(fill_color[1:3],16)},{int(fill_color[3:5],16)},{int(fill_color[5:7],16)},{fill_alpha/255:.2f})'
-
 stroke_width = st.sidebar.slider("Stroke width", 1, 10, 3) if edit_mode else 3
 
 col1, col2 = st.columns([3, 2])
@@ -154,11 +153,11 @@ with col1:
             "width": 40,
             "height": 40,
             "stroke": el.get("overlay_color", "red"),
-            "fill": fill_color,
+            "fill": el.get("overlay_color", "rgba(255,204,204,0.3)"),
             "name": str(el['id']),
         })
     canvas_result = st_canvas(
-        fill_color=fill_color,
+        fill_color=fill_color_rgba,
         stroke_width=stroke_width,
         stroke_color=stroke_color,
         background_color="#fff",
@@ -190,12 +189,10 @@ with col1:
                 submit = st.form_submit_button("Save Element")
                 if submit:
                     shape = new_objs[-1]  # last drawn, most recent
-                    # Try get photo and attachment in bytes
                     photo_bytes = photo.read() if photo else None
                     photo_name = photo.name if photo else None
                     att_bytes = attachment.read() if attachment else None
                     att_name = attachment.name if attachment else None
-                    # Insert into DB
                     cur2 = conn.cursor()
                     cur2.execute(
                         """
@@ -210,7 +207,7 @@ with col1:
                             selected_pdf_id, type_, serial, pos, internal,
                             photo_bytes, photo_name,
                             att_bytes, att_name,
-                            page_no, shape["left"], shape["top"], shape["type"], stroke_color
+                            page_no, shape["left"], shape["top"], shape["type"], fill_color_rgba
                         )
                     )
                     conn.commit()
