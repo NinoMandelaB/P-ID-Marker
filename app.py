@@ -156,6 +156,7 @@ with col1:
             "fill": el.get("overlay_color", "rgba(255,204,204,0.3)"),
             "name": str(el['id']),
         })
+
     canvas_result = st_canvas(
         fill_color=fill_color_rgba,
         stroke_width=stroke_width,
@@ -169,6 +170,7 @@ with col1:
         key=f"canvas_{page_no}_{selected_pdf_id}",
         initial_drawing={"version": "4.4.0", "objects": overlay_shapes}
     )
+
 
     # Handle New Shape Added (edit mode only)
     if edit_mode and canvas_result.json_data and 'objects' in canvas_result.json_data:
