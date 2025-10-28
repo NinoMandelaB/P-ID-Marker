@@ -55,8 +55,7 @@ def pdf_page_to_pil(pdf_bytes: bytes, page_no: int) -> Image.Image:
         if page_no >= doc.page_count:
             page_no = doc.page_count - 1
         page = doc.load_page(page_no)
-        pix = page.get_pixmap(matrix=fitz.Matrix(2,2))  # hghresolution
-        img_data = pix.tobytes("png")
+        pix = page.get_pixmap(matrix=fitz.Matrix(1,1))  # low resolution for better per
         image = Image.open(io.BytesIO(img_data))
         return image
 
