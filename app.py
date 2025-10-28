@@ -91,13 +91,18 @@ with st.sidebar:
     all_pdfs = cur.fetchall()
     pdf_options = [f"{r['id']}: {r['filename']}" for r in all_pdfs]
     pdf_selected_index = st.selectbox("Select P&ID PDF", range(len(pdf_options)), format_func=lambda i: pdf_options[i] if pdf_options else "Upload one first")
-    if all_pdfs:
+   _if all_pdfs:
         selected_pdf_id = all_pdfs[pdf_selected_index]['id']
         cur.execute("SELECT pdf_data FROM pid_documents WHERE id = %s;", (selected_pdf_id,))
-        selected_pdf_bytes = cur.fetchone()[0]
-    else:
-        selected_pdf_id = None
-        selected_pdf_bytes = None
+        pdf_row = cur.fetchone()
+        if pdf_row and pdf_row[0]:
+            selected_pdf_bytes = pdf_row[0]
+        else:
+            selected_pdf_bytes = None
+else:
+    selected_pdf_id = None
+    selected_pdf_bytes = None
+
 
 # ------------------ MAIN: CANVAS & ANNOTATION --------------------------
 st.title("P&ID Marker – Interactive Annotation & Element Management")
