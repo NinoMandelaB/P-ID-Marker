@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+/*import React, { useState, useEffect } from 'react';
 import { Button, TextField, Typography, List, ListItem, CircularProgress } from '@mui/material';
 import { uploadPDF, getPDFs } from '../api/api';
 
@@ -49,4 +49,8 @@ export default function UploadPage({ onSelectPDF }) {
       </List>
     </div>
   );
+}*/
+
+export default function UploadPage(props) {
+  return <div>Hello from UploadPage!</div>;
 }
