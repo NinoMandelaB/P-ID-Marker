@@ -1,4 +1,4 @@
-/*import React, { useState } from 'react';
+import React, { useState } from 'react';
 import UploadPage from './pages/UploadPage';
 import AnnotatePage from './pages/AnnotatePage';
 
@@ -7,6 +7,7 @@ function App() {
 
   return (
     <>
+      <div>Hello, frontend works!</div> {/* <-- This ensures something is always visible */}
       {!selectedPDF
         ? <UploadPage onSelectPDF={setSelectedPDF} />
         : <AnnotatePage pdfDoc={selectedPDF} />
@@ -15,17 +16,4 @@ function App() {
   );
 }
 
-export default App;*/
-
-import React from 'react';
-
-function App() {
-  return (
-    <div>
-      Hello, frontend works!
-    </div>
-  );
-}
-
 export default App;
-
