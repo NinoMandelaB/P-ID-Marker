@@ -6,6 +6,9 @@ import ElementDetails from '../components/ElementDetails';
 import { getElementsByDoc } from '../api/api';
 
 export default function AnnotatePage({ pdfDoc }) {
+  if (!pdfDoc) {
+    return <div>No PDF loaded</div>;
+  }
   const [pageNum, setPageNum] = useState(1);
   const [numPages, setNumPages] = useState(1);
   const [elements, setElements] = useState([]);
