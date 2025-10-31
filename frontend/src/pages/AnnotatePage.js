@@ -6,18 +6,22 @@ import ElementDetails from '../components/ElementDetails';
 import { getElementsByDoc } from '../api/api';
 
 export default function AnnotatePage({ pdfDoc }) {
-  if (!pdfDoc) {
-    return <div>No PDF loaded</div>;
-  }
+  // ❗️ All hooks must come first, always!
   const [pageNum, setPageNum] = useState(1);
   const [numPages, setNumPages] = useState(1);
   const [elements, setElements] = useState([]);
   const [selectedElement, setSelectedElement] = useState(null);
 
   useEffect(() => {
-    // Load elements for given PDF document
+    // Only fetch if pdfDoc exists
+    if (!pdfDoc) return;
     getElementsByDoc(pdfDoc.id).then(res => setElements(res.data));
-  }, [pdfDoc.id]);
+  }, [pdfDoc?.id]);
+
+  // Still okay to render conditionally!
+  if (!pdfDoc) {
+    return <div>No PDF loaded</div>;
+  }
 
   // Render PDF as image with PDFViewer, overlay shapes with AnnotationCanvas
   return (
@@ -29,7 +33,11 @@ export default function AnnotatePage({ pdfDoc }) {
       </div>
       <div style={{ flex: 1 }}>
         <ElementTable elements={elements} onSelect={setSelectedElement} />
-        <ElementDetails element={selectedElement} attachments={selectedElement?.attachments} comments={selectedElement?.comments} />
+        <ElementDetails
+          element={selectedElement}
+          attachments={selectedElement?.attachments ?? []}
+          comments={selectedElement?.comments ?? []}
+        />
       </div>
     </div>
   );
