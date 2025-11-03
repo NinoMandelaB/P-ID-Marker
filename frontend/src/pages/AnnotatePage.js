@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+/*import React, { useState, useEffect } from 'react';
 import PDFViewer from '../components/PDFViewer';
 import AnnotationCanvas from '../components/AnnotationCanvas';
 import ElementTable from '../components/ElementTable';
@@ -27,7 +27,7 @@ export default function AnnotatePage({ pdfDoc }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       <div style={{ flex: 2 }}>
-        {/* PDF + Drawing */}
+        {/* PDF + Drawing *//*}
         <PDFViewer pdfData={pdfDoc.pdf_data} pageNum={pageNum} onPageChange={setPageNum} numPages={numPages} />
         <AnnotationCanvas shapes={elements.filter(e => e.overlay_page === pageNum)} width={800} height={1100} mode="view" />
       </div>
@@ -41,4 +41,9 @@ export default function AnnotatePage({ pdfDoc }) {
       </div>
     </div>
   );
+}*/
+
+export default function AnnotationPage() {
+  return <div>Annotation Page placeholder</div>;
 }
+
