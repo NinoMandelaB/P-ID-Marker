@@ -1,5 +1,6 @@
 import React from 'react';
-import { Document, Page } from '@wojtekmaj/react-pdf';
+import { Document, Page } from 'react-pdf';
+
 
 export default function PDFViewer({ pdfData, pageNum = 1 }) {
   return (
