@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { pdfjs } from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf';
+import 'pdfjs-dist/build/pdf.worker.entry';
 
-// Set up worker
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js`;;
 
 export default function PDFViewer({ pdfData, pageNum = 1 }) {
   const canvasRef = useRef(null);
@@ -10,7 +10,7 @@ export default function PDFViewer({ pdfData, pageNum = 1 }) {
   useEffect(() => {
     if (!pdfData) return;
     const renderPage = async () => {
-      const loadingTask = pdfjs.getDocument({ data: pdfData });
+      const loadingTask = pdfjsLib.getDocument({ data: pdfData });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(pageNum);
       const viewport = page.getViewport({ scale: 1.5 });
