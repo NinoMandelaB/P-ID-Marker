@@ -1,30 +1,49 @@
-import React from 'react';
+/*import React, { useState, useEffect } from 'react';
 import PDFViewer from '../components/PDFViewer';
+import AnnotationCanvas from '../components/AnnotationCanvas';
+import ElementTable from '../components/ElementTable';
+import ElementDetails from '../components/ElementDetails';
+import { getElementsByDoc } from '../api/api';
 
-export default function AnnotatePage({ pdfDoc, goBack }) {
+export default function AnnotatePage({ pdfDoc }) {
+  // ❗️ All hooks must come first, always!
+  const [pageNum, setPageNum] = useState(1);
+  const [numPages, setNumPages] = useState(1);
+  const [elements, setElements] = useState([]);
+  const [selectedElement, setSelectedElement] = useState(null);
+
+  useEffect(() => {
+    // Only fetch if pdfDoc exists
+    if (!pdfDoc) return;
+    getElementsByDoc(pdfDoc.id).then(res => setElements(res.data));
+  }, [pdfDoc?.id]);
+
+  // Still okay to render conditionally!
   if (!pdfDoc) {
     return <div>No PDF loaded</div>;
   }
 
-  // Convert base64 PDF string to Uint8Array if needed (adjust as per your backend format)
-  let pdfData = null;
-  if (pdfDoc.pdf_data) {
-    // If pdf_data is base64-encoded:
-    try {
-      pdfData = Uint8Array.from(atob(pdfDoc.pdf_data), c => c.charCodeAt(0));
-    } catch (e) {
-      pdfData = null;
-    }
-    // If pdf_data is already Uint8Array, just use: pdfData = pdfDoc.pdf_data;
-  }
-
+  // Render PDF as image with PDFViewer, overlay shapes with AnnotationCanvas
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
-      <button onClick={goBack}>Back to Uploads</button>
-      <h2>Annotate PDF: {pdfDoc.filename}</h2>
-      {pdfData
-        ? <PDFViewer pdfData={pdfData} />
-        : <div style={{color:'red'}}>No PDF data available for preview.</div>}
+    <div style={{ display: 'flex', flexDirection: 'row' }}>
+      <div style={{ flex: 2 }}>
+        {/* PDF + Drawing *//*}
+        <PDFViewer pdfData={pdfDoc.pdf_data} pageNum={pageNum} onPageChange={setPageNum} numPages={numPages} />
+        <AnnotationCanvas shapes={elements.filter(e => e.overlay_page === pageNum)} width={800} height={1100} mode="view" />
+      </div>
+      <div style={{ flex: 1 }}>
+        <ElementTable elements={elements} onSelect={setSelectedElement} />
+        <ElementDetails
+          element={selectedElement}
+          attachments={selectedElement?.attachments ?? []}
+          comments={selectedElement?.comments ?? []}
+        />
+      </div>
     </div>
   );
+}*/
+
+export default function AnnotationPage() {
+  return <div>Annotation Page placeholder</div>;
 }
+
