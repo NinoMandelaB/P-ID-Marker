@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 
-export default function PDFViewer({ pdfData, pageNum, numPages, onPageChange, onDocumentLoad }) {
+// Set up the worker (keep this line)
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad }) {
   const containerRef = useRef();
   const [containerWidth, setContainerWidth] = useState(800);
 
-  // Update width on window resize
   useEffect(() => {
     const updateWidth = () => {
       if (containerRef.current) {
@@ -20,12 +22,15 @@ export default function PDFViewer({ pdfData, pageNum, numPages, onPageChange, on
   return (
     <div ref={containerRef} style={{ width: '100%', maxWidth: 900, margin: '0 auto' }}>
       <Document
-        file={{ data: pdfData }}
+        file={pdfUrl}
         onLoadSuccess={onDocumentLoad}
       >
-        <Page pageNumber={pageNum} width={containerWidth ? containerWidth - 32 : 800} />
+        <Page
+          pageNumber={pageNum}
+          width={containerWidth ? containerWidth - 32 : 800}
+        />
       </Document>
-      <div style={{ margin: '0.5em 0' }}>
+      <div>
         <button disabled={pageNum <= 1} onClick={() => onPageChange(pageNum - 1)}>Prev</button>
         <span> Page {pageNum} / {numPages || '?'} </span>
         <button disabled={numPages && pageNum >= numPages} onClick={() => onPageChange(pageNum + 1)}>Next</button>
