@@ -1,5 +1,9 @@
 import React from 'react';
 import PDFViewer from '../components/PDFViewer';
+import AnnotationCanvas from '../components/AnnotationCanvas';
+import ElementDetails from '../components/ElementDetails';
+import ElementTable from '../components/ElementTable';
+
 
 export default function AnnotatePage({ pdfDoc, goBack }) {
   if (!pdfDoc) {

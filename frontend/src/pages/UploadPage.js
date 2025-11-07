@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button, TextField, Typography, List, ListItem, CircularProgress } from '@mui/material';
 import { uploadPDF, getPDFs } from '../api/api';
+import PDFViewer from '../components/PDFViewer';
+import AnnotationCanvas from '../components/AnnotationCanvas';
+import ElementDetails from '../components/ElementDetails';
+import ElementTable from '../components/ElementTable';
+
 
 export default function UploadPage({ onSelectPDF }) {
   const [file, setFile] = useState(null);
