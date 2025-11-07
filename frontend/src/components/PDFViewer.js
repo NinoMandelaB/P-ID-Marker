@@ -1,40 +1,15 @@
-/*import React from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.js',
-  import.meta.url,
-).toString();
-
-export default function PDFViewer({ pdfData, pageNum = 1, onPageChange }) {
-  return (
-    <div>
-      <Document
-        file={{ data: pdfData }}
-        onLoadSuccess={({ numPages }) => onPageChange(pageNum, numPages)}
-      >
-        <Page pageNumber={pageNum} />
-      </Document>
-
-      <div>
-        <button disabled={pageNum <= 1} onClick={() => onPageChange(pageNum - 1)}>
-          Prev
-        </button>
-        <button onClick={() => onPageChange(pageNum + 1)}>Next</button>
-      </div>
-    </div>
-  );
-}*/
-
 // PDFViewer.js
 import React from 'react';
-import { Document, Page } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
 
-export default function PDFViewer({ pdfData, pageNum, numPages, onPageChange, onDocumentLoad }) {
+// Set up the worker (keep this line)
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad }) {
   return (
     <div>
       <Document
-        file={{ data: pdfData }}
+        file={pdfUrl}  // Changed: from { data: pdfData } to just pdfUrl
         onLoadSuccess={onDocumentLoad}
       >
         <Page pageNumber={pageNum} />
@@ -47,4 +22,3 @@ export default function PDFViewer({ pdfData, pageNum, numPages, onPageChange, on
     </div>
   );
 }
-

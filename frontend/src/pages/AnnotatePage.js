@@ -8,41 +8,34 @@ import ElementDetails from '../components/ElementDetails';
 export default function AnnotatePage({ pdfDoc, goBack }) {
   const [pageNum, setPageNum] = useState(1);
   const [numPages, setNumPages] = useState(null);
-  const [elements, setElements] = useState([]); // Load actual elements later
+  const [elements, setElements] = useState([]);
   const [selectedElement, setSelectedElement] = useState(null);
 
-  // Convert pdf_data as needed (example for base64 string backend)
-  let pdfData = null;
-  if (pdfDoc?.pdf_data) {
-    try {
-      pdfData = Uint8Array.from(atob(pdfDoc.pdf_data), c => c.charCodeAt(0));
-    } catch {
-      pdfData = null;
-    }
-  }
+  // Build the PDF URL from the document ID
+  const pdfUrl = `https://p-id-marker-production.up.railway.app/api/pid_documents/${pdfDoc.id}/pdf`;
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem' }}>
       <button onClick={goBack}>Back to Uploads</button>
       <h2>Annotate PDF: {pdfDoc.filename}</h2>
-      {pdfData ? (
-        <PDFViewer
-          pdfData={pdfData}
-          pageNum={pageNum}
-          numPages={numPages}
-          onPageChange={setPageNum}
-          onDocumentLoad={({ numPages }) => setNumPages(numPages)}
-        />
-      ) : (
-        <div style={{ color: "red" }}>No PDF data available for preview.</div>
-      )}
+      <PDFViewer
+        pdfUrl={pdfUrl}  // Changed: pass URL instead of pdfData
+        pageNum={pageNum}
+        numPages={numPages}
+        onPageChange={setPageNum}
+        onDocumentLoad={({ numPages }) => setNumPages(numPages)}
+      />
       <AnnotationCanvas
         shapes={elements.filter(e => e.overlay_page === pageNum)}
         onSelect={setSelectedElement}
         selected={selectedElement}
       />
       <ElementTable elements={elements} onSelect={setSelectedElement} />
-      <ElementDetails element={selectedElement} attachments={selectedElement?.attachments || []} comments={selectedElement?.comments || []} />
+      <ElementDetails 
+        element={selectedElement} 
+        attachments={selectedElement?.attachments || []} 
+        comments={selectedElement?.comments || []} 
+      />
     </div>
   );
 }
