@@ -1,4 +1,4 @@
-import React from 'react';
+/*import React from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -24,4 +24,27 @@ export default function PDFViewer({ pdfData, pageNum = 1, onPageChange }) {
       </div>
     </div>
   );
+}*/
+
+// PDFViewer.js
+import React from 'react';
+import { Document, Page } from 'react-pdf';
+
+export default function PDFViewer({ pdfData, pageNum, numPages, onPageChange, onDocumentLoad }) {
+  return (
+    <div>
+      <Document
+        file={{ data: pdfData }}
+        onLoadSuccess={onDocumentLoad}
+      >
+        <Page pageNumber={pageNum} />
+      </Document>
+      <div>
+        <button disabled={pageNum <= 1} onClick={() => onPageChange(pageNum - 1)}>Prev</button>
+        <span> Page {pageNum} / {numPages || '?'} </span>
+        <button disabled={numPages && pageNum >= numPages} onClick={() => onPageChange(pageNum + 1)}>Next</button>
+      </div>
+    </div>
+  );
 }
+
