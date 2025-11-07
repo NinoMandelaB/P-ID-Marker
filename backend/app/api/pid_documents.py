@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from ..schemas import PIDDocument, PIDDocumentCreate
 from ..crud import create_pid_document, get_pid_documents, get_pid_document
@@ -14,7 +14,11 @@ def get_db():
         db.close()
 
 @router.post("/", response_model=PIDDocument)
-async def upload_pid_document(filename: str, pdf_file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_pid_document(
+    filename: str = Form(...),  # Changed: Added Form(...)
+    pdf_file: UploadFile = File(...), 
+    db: Session = Depends(get_db)
+):
     pdf_data = await pdf_file.read()
     new_doc = PIDDocumentCreate(filename=filename, pdf_data=pdf_data)
     return create_pid_document(db, new_doc)
