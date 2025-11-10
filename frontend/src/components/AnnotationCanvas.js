@@ -32,7 +32,6 @@ export default function AnnotationCanvas({ shapes, onDrawShape, mode = "edit", w
     setDrawing(false);
     setStartPoint(null);
     if (onDrawShape && newRect && Math.abs(newRect.width) > 10 && Math.abs(newRect.height) > 10) {
-      // Only save if reasonably sized!
       onDrawShape(newRect);
     }
     setNewRect(null);
@@ -45,7 +44,7 @@ export default function AnnotationCanvas({ shapes, onDrawShape, mode = "edit", w
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      style={{ border: '1px solid #ccc', marginBottom: 16 }}
+      style={{ pointerEvents: "all" }}
     >
       <Layer>
         {shapes.map((shape, idx) => (
