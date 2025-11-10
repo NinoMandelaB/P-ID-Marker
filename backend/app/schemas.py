@@ -25,12 +25,12 @@ class ElementBase(BaseModel):
     overlay_type: str
 
 class ElementCreate(ElementBase):
-    photo: Optional[bytes]
+    photo: Optional[bytes] = None
     pid_doc_id: int
 
 class Element(ElementBase):
     id: int
-    photo: Optional[bytes]
+    photo: Optional[bytes] = None
     created_at: datetime
     updated_at: datetime
     pid_doc_id: int
@@ -45,11 +45,12 @@ class AttachmentCreate(AttachmentBase):
     file_data: bytes
     element_id: int
 
+# UPDATED: Response model WITHOUT file_data
 class Attachment(AttachmentBase):
     id: int
     element_id: int
     uploaded_at: datetime
-    file_data: bytes
+    # Removed file_data from response to avoid serialization issues
     class Config:
         orm_mode = True
 
