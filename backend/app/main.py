@@ -12,8 +12,8 @@ create_tables()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://pid-maker.up.railway.app",
-        "http://localhost:3000"
+        "https://pid-maker.up.railway.app",  # Your frontend URL
+        "http://localhost:3000"  # For local development
     ],
     allow_credentials=True,
     allow_methods=["*"],
