@@ -1,26 +1,27 @@
-// PDFViewer.js
 import React, { useRef, useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 
-// Set up the worker (keep this line)
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad }) {
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth }) {
   const containerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(null);
+  const [containerWidthState, setContainerWidthState] = useState(null);
 
-  // Measure container width and update on resize
   useEffect(() => {
     const updateWidth = () => {
       if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
+        const width = containerRef.current.offsetWidth;
+        setContainerWidthState(width);
+        if (setContainerWidth) {
+          setContainerWidth(width);
+        }
       }
     };
 
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
-  }, []);
+  }, [setContainerWidth]);
 
   return (
     <div ref={containerRef} style={{ width: '100%' }}>
@@ -30,7 +31,7 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
       >
         <Page 
           pageNumber={pageNum} 
-          width={containerWidth || undefined}  // Fit to container width
+          width={containerWidthState || undefined}
         />
       </Document>
       <div style={{ marginTop: '10px', textAlign: 'center' }}>

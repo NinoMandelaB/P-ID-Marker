@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, Typography, List, ListItem, CircularProgress } from '@mui/material';
-import { uploadPDF, getPDFs } from '../api/api';
-import PDFViewer from '../components/PDFViewer';
-import AnnotationCanvas from '../components/AnnotationCanvas';
-import ElementDetails from '../components/ElementDetails';
-import ElementTable from '../components/ElementTable';
-
+import { Button, TextField, Typography, List, ListItem, CircularProgress, IconButton } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { uploadPDF, getPDFs, deletePDF } from '../api/api';
 
 export default function UploadPage({ onSelectPDF }) {
   const [file, setFile] = useState(null);
@@ -15,10 +11,14 @@ export default function UploadPage({ onSelectPDF }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    loadPDFs();
+  }, []);
+
+  const loadPDFs = () => {
     getPDFs()
       .then(res => setPdfs(res.data))
       .catch(() => setPdfs([]));
-  }, []);
+  };
 
   const handleUpload = async () => {
     if (!file || !filename) {
@@ -31,12 +31,23 @@ export default function UploadPage({ onSelectPDF }) {
       await uploadPDF(file, filename);
       setFilename('');
       setFile(null);
-      // Refresh the list
-      getPDFs().then(res => setPdfs(res.data));
+      loadPDFs();
     } catch (err) {
       setError("Upload failed!");
     }
     setLoading(false);
+  };
+
+  const handleDelete = async (docId, e) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this PDF?")) {
+      try {
+        await deletePDF(docId);
+        loadPDFs();
+      } catch (err) {
+        setError("Delete failed!");
+      }
+    }
   };
 
   return (
@@ -74,8 +85,17 @@ export default function UploadPage({ onSelectPDF }) {
             button
             onClick={() => onSelectPDF(pdf)}
             key={pdf.id}
+            style={{ display: 'flex', justifyContent: 'space-between' }}
           >
-            {pdf.filename} ({new Date(pdf.uploaded_at).toLocaleString()})
+            <span>{pdf.filename} ({new Date(pdf.uploaded_at).toLocaleString()})</span>
+            <IconButton 
+              edge="end" 
+              aria-label="delete"
+              onClick={(e) => handleDelete(pdf.id, e)}
+              color="error"
+            >
+              <DeleteIcon />
+            </IconButton>
           </ListItem>
         ))}
       </List>

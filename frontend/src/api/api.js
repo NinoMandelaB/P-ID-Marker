@@ -11,9 +11,15 @@ export const uploadPDF = (file, filename) => {
 
 export const getPDFs = () => axios.get(`${BASE_URL}/pid_documents/`);
 
+export const deletePDF = (docId) => axios.delete(`${BASE_URL}/pid_documents/${docId}`);
+
 export const addElement = (element) => axios.post(`${BASE_URL}/elements/`, element);
 
 export const getElementsByDoc = (docId) => axios.get(`${BASE_URL}/elements/by_doc/${docId}`);
+
+export const updateElement = (elementId, element) => axios.put(`${BASE_URL}/elements/${elementId}`, element);
+
+export const deleteElement = (elementId) => axios.delete(`${BASE_URL}/elements/${elementId}`);
 
 export const uploadAttachment = (file, filename, file_type, element_id) => {
   const formData = new FormData();

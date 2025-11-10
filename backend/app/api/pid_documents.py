@@ -39,7 +39,7 @@ def get_doc(doc_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
 
-# NEW: Stream PDF file directly
+# Stream PDF file directly
 @router.get("/{doc_id}/pdf")
 def get_pdf_file(doc_id: int, db: Session = Depends(get_db)):
     doc = get_pid_document(db, doc_id)
@@ -51,3 +51,13 @@ def get_pdf_file(doc_id: int, db: Session = Depends(get_db)):
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename={doc.filename}"}
     )
+
+# DELETE PDF endpoint (NEW)
+@router.delete("/{doc_id}", status_code=204)
+def delete_pdf(doc_id: int, db: Session = Depends(get_db)):
+    doc = get_pid_document(db, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    db.delete(doc)
+    db.commit()
+    return
