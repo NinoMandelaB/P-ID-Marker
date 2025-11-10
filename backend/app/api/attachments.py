@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from ..schemas import Attachment, AttachmentCreate
 from ..crud import create_attachment, get_attachments_by_element
 from ..utils import SessionLocal
+import io
 
 router = APIRouter()
 
@@ -43,3 +45,18 @@ def delete_attachment(attachment_id: int, db: Session = Depends(get_db)):
     db.delete(attachment)
     db.commit()
     return
+
+# NEW: Download endpoint
+@router.get("/{attachment_id}/download")
+def download_attachment(attachment_id: int, db: Session = Depends(get_db)):
+    from ..models import Attachment as AttachmentModel
+    
+    attachment = db.query(AttachmentModel).filter(AttachmentModel.id == attachment_id).first()
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Attachment not found")
+    
+    return StreamingResponse(
+        io.BytesIO(attachment.file_data),
+        media_type=attachment.file_type,
+        headers={"Content-Disposition": f"attachment; filename={attachment.filename}"}
+    )
