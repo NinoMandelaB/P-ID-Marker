@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, Typography, List, ListItem, CircularProgress, IconButton } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { Button, TextField, Typography, List, ListItem, CircularProgress } from '@mui/material';
 import { uploadPDF, getPDFs, deletePDF } from '../api/api';
 
 export default function UploadPage({ onSelectPDF }) {
@@ -88,14 +87,14 @@ export default function UploadPage({ onSelectPDF }) {
             style={{ display: 'flex', justifyContent: 'space-between' }}
           >
             <span>{pdf.filename} ({new Date(pdf.uploaded_at).toLocaleString()})</span>
-            <IconButton 
-              edge="end" 
-              aria-label="delete"
-              onClick={(e) => handleDelete(pdf.id, e)}
+            <Button 
+              variant="outlined"
               color="error"
+              size="small"
+              onClick={(e) => handleDelete(pdf.id, e)}
             >
-              <DeleteIcon />
-            </IconButton>
+              Delete
+            </Button>
           </ListItem>
         ))}
       </List>
