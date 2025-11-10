@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import PDFViewer from './PDFViewer';
-import AnnotationCanvas from './AnnotationCanvas';
+import PDFViewer from '../components/PDFViewer';
+import AnnotationCanvas from '../components/AnnotationCanvas';
 import Modal from '@mui/material/Modal';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
