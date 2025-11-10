@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { 
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, 
+  Select, MenuItem, FormControl, InputLabel, List, ListItem, Typography 
+} from '@mui/material';
 import PDFViewer from '../components/PDFViewer';
 import AnnotationCanvas from '../components/AnnotationCanvas';
-import { getElementsByDoc, addElement, updateElement, deleteElement } from '../api/api';
+import { 
+  getElementsByDoc, addElement, updateElement, deleteElement,
+  uploadAttachment, getAttachmentsByElement, deleteAttachment
+} from '../api/api';
 
 export default function AnnotatePage({ pdfDoc, goBack }) {
   const [pageNum, setPageNum] = useState(1);
@@ -12,8 +18,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const [canvasHeight, setCanvasHeight] = useState(null);
   
   // Drawing/editing state
-  const [mode, setMode] = useState('draw'); // 'draw' or 'edit'
-  const [tool, setTool] = useState('rect'); // 'rect', 'circle', 'freehand'
+  const [mode, setMode] = useState('draw');
+  const [tool, setTool] = useState('rect');
   const [selectedElement, setSelectedElement] = useState(null);
   const [pendingShape, setPendingShape] = useState(null);
   
@@ -25,6 +31,11 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     position: '',
     internal_number: ''
   });
+
+  // Attachments state
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [attachmentFilename, setAttachmentFilename] = useState('');
 
   const pdfUrl = pdfDoc?.id
     ? `https://p-id-marker-production.up.railway.app/api/pid_documents/${pdfDoc.id}/pdf`
@@ -40,9 +51,20 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
 
   useEffect(() => {
     if (canvasWidth) {
-      setCanvasHeight(Math.floor(canvasWidth * 1.414)); // A4 ratio
+      setCanvasHeight(Math.floor(canvasWidth * 1.414));
     }
   }, [canvasWidth]);
+
+  // Load attachments when element is selected
+  useEffect(() => {
+    if (selectedElement?.id) {
+      getAttachmentsByElement(selectedElement.id)
+        .then(res => setAttachments(res.data))
+        .catch(() => setAttachments([]));
+    } else {
+      setAttachments([]);
+    }
+  }, [selectedElement]);
 
   const handleDrawShape = (shape) => {
     setPendingShape(shape);
@@ -74,11 +96,9 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
 
     try {
       if (selectedElement) {
-        // Update existing
         const res = await updateElement(selectedElement.id, newElement);
         setElements(elements.map(e => e.id === selectedElement.id ? res.data : e));
       } else {
-        // Create new
         const res = await addElement(newElement);
         setElements([...elements, res.data]);
       }
@@ -115,6 +135,40 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       } catch (err) {
         console.error("Failed to delete annotation:", err);
         alert("Failed to delete annotation");
+      }
+    }
+  };
+
+  const handleUploadAttachment = async () => {
+    if (!attachmentFile || !selectedElement?.id) {
+      alert("Please select a file and ensure an element is selected");
+      return;
+    }
+
+    const filename = attachmentFilename || attachmentFile.name;
+    const fileType = attachmentFile.type || 'application/octet-stream';
+
+    try {
+      await uploadAttachment(attachmentFile, filename, fileType, selectedElement.id);
+      // Reload attachments
+      const res = await getAttachmentsByElement(selectedElement.id);
+      setAttachments(res.data);
+      setAttachmentFile(null);
+      setAttachmentFilename('');
+    } catch (err) {
+      console.error("Failed to upload attachment:", err);
+      alert("Failed to upload attachment");
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    if (window.confirm("Delete this attachment?")) {
+      try {
+        await deleteAttachment(attachmentId);
+        setAttachments(attachments.filter(a => a.id !== attachmentId));
+      } catch (err) {
+        console.error("Failed to delete attachment:", err);
+        alert("Failed to delete attachment");
       }
     }
   };
@@ -180,8 +234,9 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         {canvasWidth && canvasHeight && (
           <div style={{
             position: 'absolute',
-            left: 0,
-            top: 0,
+            left: '50%',
+            top: 80,
+            transform: 'translateX(-50%)',
             width: canvasWidth,
             height: canvasHeight,
             pointerEvents: mode === 'draw' ? 'auto' : 'auto'
@@ -200,7 +255,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       </div>
 
       {/* Annotation Metadata Modal */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>{selectedElement ? 'Edit Annotation' : 'New Annotation'}</DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
@@ -238,6 +293,50 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             value={form.internal_number}
             onChange={e => setForm({ ...form, internal_number: e.target.value })}
           />
+
+          {/* Attachments Section - Only show for existing elements */}
+          {selectedElement?.id && (
+            <>
+              <Typography variant="h6" style={{ marginTop: '20px' }}>Attachments</Typography>
+              <div style={{ marginTop: '10px' }}>
+                <input
+                  type="file"
+                  onChange={e => setAttachmentFile(e.target.files[0])}
+                  style={{ marginBottom: '10px' }}
+                />
+                <TextField
+                  label="Filename (optional)"
+                  value={attachmentFilename}
+                  onChange={e => setAttachmentFilename(e.target.value)}
+                  size="small"
+                  style={{ marginLeft: '10px', marginRight: '10px' }}
+                />
+                <Button 
+                  variant="contained" 
+                  onClick={handleUploadAttachment}
+                  disabled={!attachmentFile}
+                >
+                  Upload Attachment
+                </Button>
+              </div>
+
+              <List>
+                {attachments.map(att => (
+                  <ListItem key={att.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>{att.filename} ({att.file_type})</span>
+                    <Button 
+                      variant="outlined" 
+                      color="error" 
+                      size="small"
+                      onClick={() => handleDeleteAttachment(att.id)}
+                    >
+                      Delete
+                    </Button>
+                  </ListItem>
+                ))}
+              </List>
+            </>
+          )}
         </DialogContent>
         <DialogActions>
           {selectedElement && (
