@@ -68,6 +68,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
 
   const handleDrawShape = (shape) => {
     setPendingShape(shape);
+    setSelectedElement(null); // Clear selected element for new annotation
     setForm({
       element_type: '',
       serial_number: '',
@@ -95,12 +96,22 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     };
 
     try {
-      if (selectedElement) {
+      if (selectedElement?.id) {
+        // Update existing
         const res = await updateElement(selectedElement.id, newElement);
         setElements(elements.map(e => e.id === selectedElement.id ? res.data : e));
+        alert("Annotation updated successfully!");
       } else {
+        // Create new
         const res = await addElement(newElement);
         setElements([...elements, res.data]);
+        
+        // KEY CHANGE: Set the newly created element as selected so user can add attachments
+        setSelectedElement(res.data);
+        setPendingShape(null);
+        alert("Annotation saved! You can now add attachments.");
+        // Don't close modal - keep it open for attachments
+        return;
       }
       
       setModalOpen(false);
@@ -108,12 +119,13 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       setSelectedElement(null);
     } catch (err) {
       console.error("Failed to save annotation:", err);
-      alert("Failed to save annotation");
+      alert("Failed to save annotation: " + (err.response?.data?.detail || err.message));
     }
   };
 
   const handleSelectShape = (shape) => {
     setSelectedElement(shape);
+    setPendingShape(null); // No pending shape when editing
     setForm({
       element_type: shape.element_type || '',
       serial_number: shape.serial_number || '',
@@ -124,7 +136,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   };
 
   const handleDeleteAnnotation = async () => {
-    if (!selectedElement) return;
+    if (!selectedElement?.id) return;
     
     if (window.confirm("Delete this annotation?")) {
       try {
@@ -155,9 +167,15 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       setAttachments(res.data);
       setAttachmentFile(null);
       setAttachmentFilename('');
+      
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
+      
+      alert("Attachment uploaded successfully!");
     } catch (err) {
       console.error("Failed to upload attachment:", err);
-      alert("Failed to upload attachment");
+      alert("Failed to upload attachment: " + (err.response?.data?.detail || err.message));
     }
   };
 
@@ -173,6 +191,14 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     }
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setPendingShape(null);
+    setSelectedElement(null);
+    setAttachmentFile(null);
+    setAttachmentFilename('');
+  };
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem' }}>
       <button onClick={goBack}>Back to Uploads</button>
@@ -185,14 +211,14 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
           onClick={() => setMode('draw')}
           style={{ marginRight: '8px' }}
         >
-          Draw Mode
+          DRAW MODE
         </Button>
         <Button 
           variant={mode === 'edit' ? 'contained' : 'outlined'} 
           onClick={() => setMode('edit')}
           style={{ marginRight: '16px' }}
         >
-          Edit Mode
+          EDIT MODE
         </Button>
         
         {mode === 'draw' && (
@@ -202,20 +228,20 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
               onClick={() => setTool('rect')}
               style={{ marginRight: '8px' }}
             >
-              Rectangle
+              RECTANGLE
             </Button>
             <Button 
               variant={tool === 'circle' ? 'contained' : 'outlined'} 
               onClick={() => setTool('circle')}
               style={{ marginRight: '8px' }}
             >
-              Circle
+              CIRCLE
             </Button>
             <Button 
               variant={tool === 'freehand' ? 'contained' : 'outlined'} 
               onClick={() => setTool('freehand')}
             >
-              Freehand
+              FREEHAND
             </Button>
           </>
         )}
@@ -255,8 +281,10 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       </div>
 
       {/* Annotation Metadata Modal */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>{selectedElement ? 'Edit Annotation' : 'New Annotation'}</DialogTitle>
+      <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
+        </DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
             <InputLabel>Type</InputLabel>
@@ -294,22 +322,26 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             onChange={e => setForm({ ...form, internal_number: e.target.value })}
           />
 
-          {/* Attachments Section - Only show for existing elements */}
+          {/* Attachments Section - Show after element is saved */}
           {selectedElement?.id && (
             <>
-              <Typography variant="h6" style={{ marginTop: '20px' }}>Attachments</Typography>
-              <div style={{ marginTop: '10px' }}>
+              <Typography variant="h6" style={{ marginTop: '20px', marginBottom: '10px' }}>
+                Attachments
+              </Typography>
+              <div style={{ marginTop: '10px', marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
                 <input
                   type="file"
                   onChange={e => setAttachmentFile(e.target.files[0])}
                   style={{ marginBottom: '10px' }}
+                  accept="image/*,.pdf,.doc,.docx,.txt"
                 />
+                <br />
                 <TextField
                   label="Filename (optional)"
                   value={attachmentFilename}
                   onChange={e => setAttachmentFilename(e.target.value)}
                   size="small"
-                  style={{ marginLeft: '10px', marginRight: '10px' }}
+                  style={{ marginRight: '10px', width: '200px' }}
                 />
                 <Button 
                   variant="contained" 
@@ -320,34 +352,51 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                 </Button>
               </div>
 
-              <List>
-                {attachments.map(att => (
-                  <ListItem key={att.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{att.filename} ({att.file_type})</span>
-                    <Button 
-                      variant="outlined" 
-                      color="error" 
-                      size="small"
-                      onClick={() => handleDeleteAttachment(att.id)}
-                    >
-                      Delete
-                    </Button>
-                  </ListItem>
-                ))}
-              </List>
+              {attachments.length > 0 ? (
+                <List>
+                  {attachments.map(att => (
+                    <ListItem key={att.id} style={{ display: 'flex', justifyContent: 'space-between', border: '1px solid #eee', marginBottom: '5px' }}>
+                      <span><strong>{att.filename}</strong> ({att.file_type})</span>
+                      <Button 
+                        variant="outlined" 
+                        color="error" 
+                        size="small"
+                        onClick={() => handleDeleteAttachment(att.id)}
+                      >
+                        Delete
+                      </Button>
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography variant="body2" color="textSecondary">
+                  No attachments yet
+                </Typography>
+              )}
             </>
+          )}
+
+          {/* Message for new annotations */}
+          {!selectedElement?.id && (
+            <Typography variant="body2" color="textSecondary" style={{ marginTop: '15px' }}>
+              Save the annotation first to add attachments
+            </Typography>
           )}
         </DialogContent>
         <DialogActions>
-          {selectedElement && (
+          {selectedElement?.id && (
             <Button onClick={handleDeleteAnnotation} color="error">
-              Delete
+              Delete Annotation
             </Button>
           )}
-          <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveAnnotation} variant="contained" color="primary">
-            Save
+          <Button onClick={handleCloseModal}>
+            {selectedElement?.id ? 'Close' : 'Cancel'}
           </Button>
+          {!selectedElement?.id || pendingShape ? (
+            <Button onClick={handleSaveAnnotation} variant="contained" color="primary">
+              Save
+            </Button>
+          ) : null}
         </DialogActions>
       </Dialog>
     </div>
