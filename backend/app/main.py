@@ -1,17 +1,21 @@
 from .api import elements
 from .api import attachments, comments
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware  # Add this import
+from fastapi.middleware.cors import CORSMiddleware
 from .utils import create_tables
 from .api import pid_documents
 
 app = FastAPI()
 create_tables()
 
-# Add CORS middleware
+# Add CORS middleware - UPDATE THIS LINE
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://insightful-vibrancy-production.up.railway.app"],  # Your frontend domain
+    allow_origins=[
+        "https://pid-maker.up.railway.app",  # NEW frontend URL
+        "https://insightful-vibrancy-production.up.railway.app",  # Keep old one just in case
+        "http://localhost:3000"  # For local development
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
