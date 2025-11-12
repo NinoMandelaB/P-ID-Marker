@@ -4,10 +4,9 @@ import { Button } from '@mui/material';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth }) {
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth, scale, setScale }) {
   const containerRef = useRef(null);
   const [containerWidthState, setContainerWidthState] = useState(null);
-  const [scale, setScale] = useState(1.0);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -15,7 +14,7 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
         const width = containerRef.current.offsetWidth;
         setContainerWidthState(width);
         if (setContainerWidth) {
-          setContainerWidth(width * scale);
+          setContainerWidth(width);
         }
       }
     };
@@ -23,7 +22,7 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
     updateWidth();
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
-  }, [setContainerWidth, scale]);
+  }, [setContainerWidth]);
 
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev + 0.25, 3.0));
@@ -53,13 +52,11 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
         </Button>
       </div>
 
-      {/* PDF Document with scrollable container */}
+      {/* PDF Document - NO SCROLLABLE CONTAINER */}
       <div style={{ 
-        maxHeight: '70vh', 
-        overflow: 'auto', 
-        border: '1px solid #ccc',
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative'
       }}>
         <Document
           file={pdfUrl}

@@ -16,7 +16,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const [elements, setElements] = useState([]);
   const [canvasWidth, setCanvasWidth] = useState(null);
   const [canvasHeight, setCanvasHeight] = useState(null);
-  const [baseWidth, setBaseWidth] = useState(null); // NEW: Track base PDF width
+  const [scale, setScale] = useState(1.0); // Zoom scale
   
   // Drawing/editing state
   const [mode, setMode] = useState('draw');
@@ -53,12 +53,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   useEffect(() => {
     if (canvasWidth) {
       setCanvasHeight(Math.floor(canvasWidth * 1.414));
-      // Set base width on first load (without zoom)
-      if (!baseWidth) {
-        setBaseWidth(canvasWidth);
-      }
     }
-  }, [canvasWidth, baseWidth]);
+  }, [canvasWidth]);
 
   // Load attachments when element is selected
   useEffect(() => {
@@ -71,31 +67,32 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     }
   }, [selectedElement]);
 
-  // Calculate scale factor for zoom
-  const scaleFactor = baseWidth && canvasWidth ? canvasWidth / baseWidth : 1;
+  // Calculate actual canvas dimensions based on zoom
+  const actualCanvasWidth = canvasWidth * scale;
+  const actualCanvasHeight = canvasHeight * scale;
 
   // Scale shapes for display based on current zoom
   const scaledElements = elements
     .filter(e => e.overlay_page === pageNum)
     .map(e => ({
       ...e,
-      x: e.overlay_x * scaleFactor,
-      y: e.overlay_y * scaleFactor,
-      width: (e.width || 50) * scaleFactor,
-      height: (e.height || 50) * scaleFactor,
-      radius: e.radius ? e.radius * scaleFactor : undefined,
-      points: e.points ? e.points.map((p, i) => p * scaleFactor) : undefined
+      x: e.overlay_x * scale,
+      y: e.overlay_y * scale,
+      width: (e.width || 50) * scale,
+      height: (e.height || 50) * scale,
+      radius: e.radius ? e.radius * scale : undefined,
+      points: e.points ? e.points.map(p => p * scale) : undefined
     }));
 
   const handleDrawShape = (shape) => {
-    // Store shape in base coordinates (unscaled)
+    // Store shape in base coordinates (at scale 1.0)
     const unscaledShape = {
       ...shape,
-      x: shape.x / scaleFactor,
-      y: shape.y / scaleFactor,
-      width: shape.width / scaleFactor,
-      height: shape.height / scaleFactor,
-      points: shape.points ? shape.points.map(p => p / scaleFactor) : undefined
+      x: shape.x / scale,
+      y: shape.y / scale,
+      width: shape.width / scale,
+      height: shape.height / scale,
+      points: shape.points ? shape.points.map(p => p / scale) : undefined
     };
     
     setPendingShape(unscaledShape);
@@ -150,7 +147,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   };
 
   const handleSelectShape = (shape) => {
-    // Find original unscaled element
     const originalElement = elements.find(e => e.id === shape.id);
     if (!originalElement) return;
     
@@ -275,40 +271,50 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         )}
       </div>
 
-      {/* PDF + Canvas Overlay */}
-      <div style={{ position: 'relative', width: '100%' }}>
-        <PDFViewer
-          pdfUrl={pdfUrl}
-          pageNum={pageNum}
-          numPages={numPages}
-          onPageChange={setPageNum}
-          onDocumentLoad={({ numPages }) => setNumPages(numPages)}
-          setContainerWidth={setCanvasWidth}
-        />
-        {canvasWidth && canvasHeight && (
-          <div style={{
-            position: 'absolute',
-            left: '50%',
-            top: 80,
-            transform: 'translateX(-50%)',
-            width: canvasWidth,
-            height: canvasHeight,
-            pointerEvents: mode === 'draw' ? 'auto' : 'auto'
-          }}>
-            <AnnotationCanvas
-              shapes={scaledElements}
-              onDrawShape={handleDrawShape}
-              onSelectShape={handleSelectShape}
-              mode={mode}
-              tool={tool}
-              width={canvasWidth}
-              height={canvasHeight}
-            />
-          </div>
-        )}
+      {/* PDF + Canvas Overlay - WRAPPED IN SCROLLABLE CONTAINER */}
+      <div style={{ 
+        maxHeight: '70vh', 
+        overflow: 'auto', 
+        border: '1px solid #ccc',
+        position: 'relative'
+      }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <PDFViewer
+            pdfUrl={pdfUrl}
+            pageNum={pageNum}
+            numPages={numPages}
+            onPageChange={setPageNum}
+            onDocumentLoad={({ numPages }) => setNumPages(numPages)}
+            setContainerWidth={setCanvasWidth}
+            scale={scale}
+            setScale={setScale}
+          />
+          {canvasWidth && canvasHeight && (
+            <div style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50px',
+              transform: 'translateX(-50%)',
+              width: actualCanvasWidth,
+              height: actualCanvasHeight,
+              pointerEvents: mode === 'draw' ? 'auto' : 'auto',
+              zIndex: 10
+            }}>
+              <AnnotationCanvas
+                shapes={scaledElements}
+                onDrawShape={handleDrawShape}
+                onSelectShape={handleSelectShape}
+                mode={mode}
+                tool={tool}
+                width={actualCanvasWidth}
+                height={actualCanvasHeight}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Annotation Metadata Modal */}
+      {/* Modal - same as before */}
       <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
@@ -350,7 +356,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             onChange={e => setForm({ ...form, internal_number: e.target.value })}
           />
 
-          {/* Attachments Section - Show after element is saved */}
           {selectedElement?.id && (
             <>
               <Typography variant="h6" style={{ marginTop: '20px', marginBottom: '10px' }}>
@@ -423,7 +428,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             </>
           )}
 
-          {/* Message for new annotations */}
           {!selectedElement?.id && (
             <Typography variant="body2" color="textSecondary" style={{ marginTop: '15px' }}>
               Save the annotation first to add attachments
