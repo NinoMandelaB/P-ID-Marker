@@ -395,6 +395,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                 </Typography>
               )}
 
+             
+
           {/* Message for new annotations */}
           {!selectedElement?.id && (
             <Typography variant="body2" color="textSecondary" style={{ marginTop: '15px' }}>
