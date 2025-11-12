@@ -296,7 +296,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             pointerEvents: mode === 'draw' ? 'auto' : 'auto'
           }}>
             <AnnotationCanvas
-              shapes={scaledElements}  {/* USE SCALED ELEMENTS */}
+              shapes={scaledElements}
               onDrawShape={handleDrawShape}
               onSelectShape={handleSelectShape}
               mode={mode}
@@ -308,9 +308,143 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         )}
       </div>
 
-      {/* Modal code stays the same... */}
+      {/* Annotation Metadata Modal */}
       <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
-        {/* ... rest of your modal code ... */}
+        <DialogTitle>
+          {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
+        </DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Type</InputLabel>
+            <Select
+              value={form.element_type}
+              onChange={e => setForm({ ...form, element_type: e.target.value })}
+            >
+              <MenuItem value="Valve">Valve</MenuItem>
+              <MenuItem value="Pump">Pump</MenuItem>
+              <MenuItem value="Tank">Tank</MenuItem>
+              <MenuItem value="Pipe">Pipe</MenuItem>
+              <MenuItem value="Instrument">Instrument</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Serial Number"
+            fullWidth
+            margin="normal"
+            value={form.serial_number}
+            onChange={e => setForm({ ...form, serial_number: e.target.value })}
+          />
+          <TextField
+            label="Position"
+            fullWidth
+            margin="normal"
+            value={form.position}
+            onChange={e => setForm({ ...form, position: e.target.value })}
+          />
+          <TextField
+            label="Internal Number"
+            fullWidth
+            margin="normal"
+            value={form.internal_number}
+            onChange={e => setForm({ ...form, internal_number: e.target.value })}
+          />
+
+          {/* Attachments Section - Show after element is saved */}
+          {selectedElement?.id && (
+            <>
+              <Typography variant="h6" style={{ marginTop: '20px', marginBottom: '10px' }}>
+                Attachments
+              </Typography>
+              <div style={{ marginTop: '10px', marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+                <input
+                  type="file"
+                  onChange={e => setAttachmentFile(e.target.files[0])}
+                  style={{ marginBottom: '10px' }}
+                  accept="image/*,.pdf,.doc,.docx,.txt"
+                />
+                <br />
+                <TextField
+                  label="Filename (optional)"
+                  value={attachmentFilename}
+                  onChange={e => setAttachmentFilename(e.target.value)}
+                  size="small"
+                  style={{ marginRight: '10px', width: '200px' }}
+                />
+                <Button 
+                  variant="contained" 
+                  onClick={handleUploadAttachment}
+                  disabled={!attachmentFile}
+                >
+                  Upload Attachment
+                </Button>
+              </div>
+
+              {attachments.length > 0 ? (
+                <List>
+                  {attachments.map(att => (
+                    <ListItem 
+                      key={att.id} 
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        border: '1px solid #eee', 
+                        marginBottom: '5px',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <a 
+                          href={`https://p-id-marker-production.up.railway.app/api/attachments/${att.id}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 'bold' }}
+                        >
+                          {att.filename}
+                        </a>
+                        <span style={{ marginLeft: '10px', color: '#666' }}>({att.file_type})</span>
+                      </div>
+                      <Button 
+                        variant="outlined" 
+                        color="error" 
+                        size="small"
+                        onClick={() => handleDeleteAttachment(att.id)}
+                      >
+                        Delete
+                      </Button>
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography variant="body2" color="textSecondary">
+                  No attachments yet
+                </Typography>
+              )}
+            </>
+          )}
+
+          {/* Message for new annotations */}
+          {!selectedElement?.id && (
+            <Typography variant="body2" color="textSecondary" style={{ marginTop: '15px' }}>
+              Save the annotation first to add attachments
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {selectedElement?.id && (
+            <Button onClick={handleDeleteAnnotation} color="error">
+              Delete Annotation
+            </Button>
+          )}
+          <Button onClick={handleCloseModal}>
+            {selectedElement?.id ? 'Close' : 'Cancel'}
+          </Button>
+          {!selectedElement?.id || pendingShape ? (
+            <Button onClick={handleSaveAnnotation} variant="contained" color="primary">
+              Save
+            </Button>
+          ) : null}
+        </DialogActions>
       </Dialog>
     </div>
   );
