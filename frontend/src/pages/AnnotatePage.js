@@ -352,11 +352,32 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                 </Button>
               </div>
 
+              // In the attachments list section, replace the current List with this:
+
               {attachments.length > 0 ? (
                 <List>
                   {attachments.map(att => (
-                    <ListItem key={att.id} style={{ display: 'flex', justifyContent: 'space-between', border: '1px solid #eee', marginBottom: '5px' }}>
-                      <span><strong>{att.filename}</strong> ({att.file_type})</span>
+                    <ListItem 
+                      key={att.id} 
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        border: '1px solid #eee', 
+                        marginBottom: '5px',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <a 
+                          href={`https://p-id-marker-production.up.railway.app/api/attachments/${att.id}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none', color: '#1976d2', fontWeight: 'bold' }}
+                        >
+                          {att.filename}
+                        </a>
+                        <span style={{ marginLeft: '10px', color: '#666' }}>({att.file_type})</span>
+                      </div>
                       <Button 
                         variant="outlined" 
                         color="error" 
@@ -373,8 +394,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                   No attachments yet
                 </Typography>
               )}
-            </>
-          )}
 
           {/* Message for new annotations */}
           {!selectedElement?.id && (
