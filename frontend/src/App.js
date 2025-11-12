@@ -8,7 +8,7 @@ function App() {
 
   return (
     <>
-      <div>Hello, frontend works!</div>
+      {/*<div>Hello, frontend works!</div>*/}
       {!selectedPDF
         ? <UploadPage onSelectPDF={setSelectedPDF} />
         : <AnnotatePage pdfDoc={selectedPDF} goBack={handleGoBack} />
