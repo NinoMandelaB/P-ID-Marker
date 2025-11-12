@@ -393,6 +393,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                   No attachments yet
                 </Typography>
               )}
+            </>
+          )}  
 
              
 
