@@ -352,7 +352,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                 </Button>
               </div>
 
-              // In the attachments list section, replace the current List with this:
 
               {attachments.length > 0 ? (
                 <List>
@@ -403,6 +402,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
               Save the annotation first to add attachments
             </Typography>
           )}
+
         </DialogContent>
         <DialogActions>
           {selectedElement?.id && (
