@@ -12,7 +12,8 @@ class PIDDocument(Base):
     uploaded_at = Column(DateTime, default=datetime.utcnow)
     pdf_data = Column(LargeBinary)
 
-    elements = relationship("Element", back_populates="pid_document")
+    # CASCADE DELETE: When PDF is deleted, all elements are automatically deleted
+    elements = relationship("Element", back_populates="pid_document", cascade="all, delete-orphan")
 
 class Element(Base):
     __tablename__ = "elements"
@@ -28,16 +29,23 @@ class Element(Base):
     overlay_y = Column(Float)
     overlay_page = Column(Integer)
     overlay_type = Column(Text)
-    pid_doc_id = Column(Integer, ForeignKey('pid_documents.id'))
+    
+    # CASCADE on database level: When parent PDF is deleted, this element is deleted
+    pid_doc_id = Column(Integer, ForeignKey('pid_documents.id', ondelete='CASCADE'))
 
     pid_document = relationship("PIDDocument", back_populates="elements")
-    attachments = relationship("Attachment", back_populates="element")
-    comments = relationship("Comment", back_populates="element")
+    
+    # CASCADE DELETE: When element is deleted, all attachments and comments are deleted
+    attachments = relationship("Attachment", back_populates="element", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="element", cascade="all, delete-orphan")
 
 class Attachment(Base):
     __tablename__ = "attachments"
     id = Column(Integer, primary_key=True, index=True)
-    element_id = Column(Integer, ForeignKey('elements.id'))
+    
+    # CASCADE on database level: When parent element is deleted, this attachment is deleted
+    element_id = Column(Integer, ForeignKey('elements.id', ondelete='CASCADE'))
+    
     filename = Column(String)
     file_data = Column(LargeBinary)
     file_type = Column(String)
@@ -48,7 +56,10 @@ class Attachment(Base):
 class Comment(Base):
     __tablename__ = "comments"
     id = Column(Integer, primary_key=True, index=True)
-    element_id = Column(Integer, ForeignKey('elements.id'))
+    
+    # CASCADE on database level: When parent element is deleted, this comment is deleted
+    element_id = Column(Integer, ForeignKey('elements.id', ondelete='CASCADE'))
+    
     comment_text = Column(Text)
     created_at = Column(DateTime, default=datetime.utcnow)
 
