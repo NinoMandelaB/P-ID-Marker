@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, 
   Select, MenuItem, FormControl, InputLabel, List, ListItem, Typography 
@@ -17,6 +17,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const [canvasWidth, setCanvasWidth] = useState(null);
   const [canvasHeight, setCanvasHeight] = useState(null);
   const [scale, setScale] = useState(1.0);
+  const baseWidthRef = useRef(null); // Store the base width (at 100% zoom)
   
   // Drawing/editing state
   const [mode, setMode] = useState('draw');
@@ -53,8 +54,13 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   useEffect(() => {
     if (canvasWidth) {
       setCanvasHeight(Math.floor(canvasWidth * 1.414));
+      
+      // Set base width only once when first loaded (at scale 1.0)
+      if (!baseWidthRef.current && scale === 1.0) {
+        baseWidthRef.current = canvasWidth;
+      }
     }
-  }, [canvasWidth]);
+  }, [canvasWidth, scale]);
 
   // Load attachments when element is selected
   useEffect(() => {
@@ -71,31 +77,37 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const actualCanvasWidth = canvasWidth * scale;
   const actualCanvasHeight = canvasHeight * scale;
 
-  // Scale shapes for display based on current zoom
+  // Get the base width (reference width at 100% zoom)
+  const baseWidth = baseWidthRef.current || canvasWidth;
+
+  // Scale shapes for display: stored coordinates are at base width, scale them for current zoom
   const scaledElements = elements
     .filter(e => e.overlay_page === pageNum)
     .map(e => ({
       ...e,
-      x: e.overlay_x * scale,
-      y: e.overlay_y * scale,
-      width: (e.width || 50) * scale,
-      height: (e.height || 50) * scale,
-      radius: e.radius ? e.radius * scale : undefined,
-      points: e.points ? e.points.map(p => p * scale) : undefined
+      // Scale from base coordinates to current zoom level
+      x: (e.overlay_x / baseWidth) * actualCanvasWidth,
+      y: (e.overlay_y / baseWidth) * actualCanvasWidth,
+      width: ((e.width || 50) / baseWidth) * actualCanvasWidth,
+      height: ((e.height || 50) / baseWidth) * actualCanvasWidth,
+      radius: e.radius ? (e.radius / baseWidth) * actualCanvasWidth : undefined,
+      points: e.points ? e.points.map(p => (p / baseWidth) * actualCanvasWidth) : undefined
     }));
 
   const handleDrawShape = (shape) => {
-    // Store shape in base coordinates (at scale 1.0)
-    const unscaledShape = {
+    // Convert canvas coordinates (at current zoom) to base coordinates (at 100% zoom)
+    const baseScale = baseWidth / actualCanvasWidth;
+    
+    const baseShape = {
       ...shape,
-      x: shape.x / scale,
-      y: shape.y / scale,
-      width: shape.width / scale,
-      height: shape.height / scale,
-      points: shape.points ? shape.points.map(p => p / scale) : undefined
+      x: shape.x * baseScale,
+      y: shape.y * baseScale,
+      width: shape.width * baseScale,
+      height: shape.height * baseScale,
+      points: shape.points ? shape.points.map(p => p * baseScale) : undefined
     };
     
-    setPendingShape(unscaledShape);
+    setPendingShape(baseShape);
     setSelectedElement(null);
     setForm({
       element_type: '',
@@ -298,7 +310,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             <div style={{
               position: 'absolute',
               left: '50%',
-              top: '62px', // Height of zoom controls + margins
+              top: '62px',
               transform: 'translateX(-50%)',
               width: actualCanvasWidth,
               height: actualCanvasHeight,
@@ -319,7 +331,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal (same as before) */}
       <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
