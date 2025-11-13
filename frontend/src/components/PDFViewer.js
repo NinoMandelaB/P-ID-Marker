@@ -4,8 +4,9 @@ import { Button } from '@mui/material';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth, scale, setScale }) {
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth, scale, setScale, onPageRender }) {
   const containerRef = useRef(null);
+  const pageContainerRef = useRef(null);
   const [containerWidthState, setContainerWidthState] = useState(null);
 
   useEffect(() => {
@@ -24,6 +25,14 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
     return () => window.removeEventListener('resize', updateWidth);
   }, [setContainerWidth]);
 
+  // Notify parent when page renders to get positioning
+  useEffect(() => {
+    if (pageContainerRef.current && onPageRender) {
+      const rect = pageContainerRef.current.getBoundingClientRect();
+      onPageRender(rect);
+    }
+  }, [scale, containerWidthState, onPageRender]);
+
   const handleZoomIn = () => {
     setScale(prev => Math.min(prev + 0.25, 3.0));
   };
@@ -39,7 +48,7 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
   return (
     <div ref={containerRef} style={{ width: '100%' }}>
       {/* Zoom Controls */}
-      <div style={{ marginBottom: '10px', textAlign: 'center' }}>
+      <div style={{ marginBottom: '10px', textAlign: 'center', background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
         <Button onClick={handleZoomOut} variant="outlined" size="small" style={{ marginRight: '8px' }}>
           Zoom Out
         </Button>
@@ -52,12 +61,8 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
         </Button>
       </div>
 
-      {/* PDF Document - NO SCROLLABLE CONTAINER */}
-      <div style={{ 
-        display: 'flex',
-        justifyContent: 'center',
-        position: 'relative'
-      }}>
+      {/* PDF Document Container */}
+      <div ref={pageContainerRef} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoad}
@@ -65,6 +70,8 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
           <Page 
             pageNumber={pageNum} 
             width={(containerWidthState || 800) * scale}
+            renderTextLayer={false}
+            renderAnnotationLayer={false}
           />
         </Document>
       </div>

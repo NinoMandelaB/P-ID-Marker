@@ -16,7 +16,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const [elements, setElements] = useState([]);
   const [canvasWidth, setCanvasWidth] = useState(null);
   const [canvasHeight, setCanvasHeight] = useState(null);
-  const [scale, setScale] = useState(1.0); // Zoom scale
+  const [scale, setScale] = useState(1.0);
   
   // Drawing/editing state
   const [mode, setMode] = useState('draw');
@@ -271,14 +271,17 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         )}
       </div>
 
-      {/* PDF + Canvas Overlay - WRAPPED IN SCROLLABLE CONTAINER */}
+      {/* PDF + Canvas - both in same scrollable container */}
       <div style={{ 
         maxHeight: '70vh', 
         overflow: 'auto', 
-        border: '1px solid #ccc',
-        position: 'relative'
+        border: '2px solid #ccc',
+        borderRadius: '4px',
+        position: 'relative',
+        background: '#fafafa'
       }}>
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{ position: 'relative', minHeight: '400px' }}>
+          {/* PDF Viewer */}
           <PDFViewer
             pdfUrl={pdfUrl}
             pageNum={pageNum}
@@ -289,15 +292,17 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             scale={scale}
             setScale={setScale}
           />
+          
+          {/* Canvas Overlay - positioned exactly over PDF */}
           {canvasWidth && canvasHeight && (
             <div style={{
               position: 'absolute',
               left: '50%',
-              top: '50px',
+              top: '62px', // Height of zoom controls + margins
               transform: 'translateX(-50%)',
               width: actualCanvasWidth,
               height: actualCanvasHeight,
-              pointerEvents: mode === 'draw' ? 'auto' : 'auto',
+              pointerEvents: 'auto',
               zIndex: 10
             }}>
               <AnnotationCanvas
@@ -314,7 +319,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         </div>
       </div>
 
-      {/* Modal - same as before */}
+      {/* Modal */}
       <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
