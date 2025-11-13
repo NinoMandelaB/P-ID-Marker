@@ -344,13 +344,12 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             scale={scale}
             setScale={setScale}
           />
-          
           {canvasWidth && canvasHeight && (
             <div style={{
               position: 'absolute',
-              left: '50%',
+              left: '0',  // Changed from '50%' to '0'
               top: '62px',
-              transform: 'translateX(-50%)',
+              transform: 'none',  // Changed from 'translateX(-50%)' to 'none'
               width: actualCanvasWidth * scale,
               height: actualCanvasHeight * scale,
               pointerEvents: 'auto',

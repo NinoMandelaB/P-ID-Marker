@@ -4,9 +4,8 @@ import { Button } from '@mui/material';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth, scale, setScale, onPageRender }) {
+export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onDocumentLoad, setContainerWidth, scale, setScale }) {
   const containerRef = useRef(null);
-  const pageContainerRef = useRef(null);
   const [containerWidthState, setContainerWidthState] = useState(null);
 
   useEffect(() => {
@@ -25,16 +24,8 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
     return () => window.removeEventListener('resize', updateWidth);
   }, [setContainerWidth]);
 
-  // Notify parent when page renders to get positioning
-  useEffect(() => {
-    if (pageContainerRef.current && onPageRender) {
-      const rect = pageContainerRef.current.getBoundingClientRect();
-      onPageRender(rect);
-    }
-  }, [scale, containerWidthState, onPageRender]);
-
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3.0));
+    setScale(prev => Math.min(prev + 0.25, 6.0)); // Changed from 3.0 to 6.0 (600%)
   };
 
   const handleZoomOut = () => {
@@ -61,8 +52,12 @@ export default function PDFViewer({ pdfUrl, pageNum, numPages, onPageChange, onD
         </Button>
       </div>
 
-      {/* PDF Document Container */}
-      <div ref={pageContainerRef} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+      {/* PDF Document - LEFT ALIGNED */}
+      <div style={{ 
+        display: 'flex',
+        justifyContent: 'flex-start', // Changed from 'center' to 'flex-start'
+        position: 'relative'
+      }}>
         <Document
           file={pdfUrl}
           onLoadSuccess={onDocumentLoad}
