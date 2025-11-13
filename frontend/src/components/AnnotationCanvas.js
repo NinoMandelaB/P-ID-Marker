@@ -9,7 +9,8 @@ export default function AnnotationCanvas({
   tool = 'rect',
   width, 
   height,
-  scale = 1.0  // NEW: Accept scale prop
+  scale = 1.0,
+  color = '#ff0000'
 }) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentShape, setCurrentShape] = useState(null);
@@ -21,13 +22,13 @@ export default function AnnotationCanvas({
     const stage = e.target.getStage();
     const pointerPosition = stage.getPointerPosition();
     
-    // Adjust for scale - divide by scale to get actual coordinates
     const x = pointerPosition.x / scale;
     const y = pointerPosition.y / scale;
     
     setIsDrawing(true);
     setCurrentShape({
       tool,
+      color: color,
       x: x,
       y: y,
       width: 0,
@@ -42,7 +43,6 @@ export default function AnnotationCanvas({
     const stage = e.target.getStage();
     const pointerPosition = stage.getPointerPosition();
     
-    // Adjust for scale
     const x = pointerPosition.x / scale;
     const y = pointerPosition.y / scale;
 
@@ -83,16 +83,17 @@ export default function AnnotationCanvas({
       ref={stageRef}
       width={width || 800}
       height={height || 1131}
-      scaleX={scale}  // NEW: Apply scale transformation
-      scaleY={scale}  // NEW: Apply scale transformation
+      scaleX={scale}
+      scaleY={scale}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       style={{ border: '1px solid #ddd', cursor: mode === 'draw' ? 'crosshair' : 'pointer' }}
     >
       <Layer>
-        {/* Render existing shapes - coordinates are in PDF space, Stage scale handles display */}
         {shapes.map((shape, i) => {
+          const shapeColor = shape.overlay_color || shape.color || '#ff0000';
+          
           if (shape.overlay_type === 'rect' || shape.tool === 'rect') {
             return (
               <Rect
@@ -101,8 +102,8 @@ export default function AnnotationCanvas({
                 y={shape.overlay_y || shape.y}
                 width={shape.width || 50}
                 height={shape.height || 50}
-                stroke="red"
-                strokeWidth={2 / scale}  // Adjust stroke width for scale
+                stroke={shapeColor}
+                strokeWidth={2 / scale}
                 onClick={() => handleShapeClick(shape)}
               />
             );
@@ -113,8 +114,8 @@ export default function AnnotationCanvas({
                 x={shape.overlay_x || shape.x}
                 y={shape.overlay_y || shape.y}
                 radius={shape.radius || Math.abs(shape.width) / 2 || 25}
-                stroke="blue"
-                strokeWidth={2 / scale}  // Adjust stroke width for scale
+                stroke={shapeColor}
+                strokeWidth={2 / scale}
                 onClick={() => handleShapeClick(shape)}
               />
             );
@@ -123,8 +124,8 @@ export default function AnnotationCanvas({
               <Line
                 key={i}
                 points={shape.points || []}
-                stroke="green"
-                strokeWidth={2 / scale}  // Adjust stroke width for scale
+                stroke={shapeColor}
+                strokeWidth={2 / scale}
                 onClick={() => handleShapeClick(shape)}
               />
             );
@@ -132,14 +133,13 @@ export default function AnnotationCanvas({
           return null;
         })}
         
-        {/* Render shape being drawn */}
         {currentShape && currentShape.tool === 'rect' && (
           <Rect
             x={currentShape.x}
             y={currentShape.y}
             width={currentShape.width}
             height={currentShape.height}
-            stroke="red"
+            stroke={currentShape.color}
             strokeWidth={2 / scale}
           />
         )}
@@ -149,7 +149,7 @@ export default function AnnotationCanvas({
             x={currentShape.x}
             y={currentShape.y}
             radius={Math.abs(currentShape.width) / 2}
-            stroke="blue"
+            stroke={currentShape.color}
             strokeWidth={2 / scale}
           />
         )}
@@ -157,7 +157,7 @@ export default function AnnotationCanvas({
         {currentShape && currentShape.tool === 'freehand' && (
           <Line
             points={currentShape.points}
-            stroke="green"
+            stroke={currentShape.color}
             strokeWidth={2 / scale}
           />
         )}

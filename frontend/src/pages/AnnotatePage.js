@@ -21,6 +21,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   // Drawing/editing state
   const [mode, setMode] = useState('draw');
   const [tool, setTool] = useState('rect');
+  const [annotationColor, setAnnotationColor] = useState('#ff0000');
   const [selectedElement, setSelectedElement] = useState(null);
   const [pendingShape, setPendingShape] = useState(null);
   
@@ -56,7 +57,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     }
   }, [canvasWidth]);
 
-  // Load attachments when element is selected
   useEffect(() => {
     if (selectedElement?.id) {
       getAttachmentsByElement(selectedElement.id)
@@ -67,16 +67,69 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
     }
   }, [selectedElement]);
 
-  // Canvas dimensions match base PDF size (at scale 1.0)
-  // The Stage will handle scaling internally
   const actualCanvasWidth = canvasWidth || 800;
   const actualCanvasHeight = canvasHeight || 1131;
-
-  // Filter elements for current page - NO SCALING needed, Stage handles it
   const currentPageElements = elements.filter(e => e.overlay_page === pageNum);
 
+  const handleExportCSV = () => {
+    if (elements.length === 0) {
+      alert("No annotations to export!");
+      return;
+    }
+
+    const headers = [
+      'ID',
+      'Type',
+      'Serial Number',
+      'Position',
+      'Internal Number',
+      'Page',
+      'Color',
+      'Overlay Type',
+      'X Position',
+      'Y Position',
+      'Width',
+      'Height',
+      'Created At',
+      'Updated At'
+    ];
+
+    const rows = elements.map(e => [
+      e.id,
+      e.element_type || '',
+      e.serial_number || '',
+      e.position || '',
+      e.internal_number || '',
+      e.overlay_page || '',
+      e.overlay_color || '',
+      e.overlay_type || '',
+      e.overlay_x || '',
+      e.overlay_y || '',
+      e.width || '',
+      e.height || '',
+      e.created_at || '',
+      e.updated_at || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `annotations_${pdfDoc?.filename || 'export'}_${Date.now()}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDrawShape = (shape) => {
-    // Shape coordinates are already in PDF space (from AnnotationCanvas)
     setPendingShape(shape);
     setSelectedElement(null);
     setForm({
@@ -97,6 +150,7 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       overlay_y: pendingShape.y,
       overlay_page: pageNum,
       overlay_type: pendingShape.tool,
+      overlay_color: pendingShape.color || annotationColor,
       width: pendingShape.width,
       height: pendingShape.height,
       radius: pendingShape.tool === 'circle' ? Math.abs(pendingShape.width) / 2 : undefined,
@@ -207,10 +261,19 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem' }}>
-      <button onClick={goBack}>Back to Uploads</button>
-      <h2>Annotate PDF: {pdfDoc?.filename}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <button onClick={goBack}>Back to Uploads</button>
+        <h2 style={{ flex: 1, textAlign: 'center', margin: 0 }}>Annotate PDF: {pdfDoc?.filename}</h2>
+        <Button 
+          variant="contained" 
+          color="success"
+          onClick={handleExportCSV}
+          disabled={elements.length === 0}
+        >
+          Export CSV ({elements.length})
+        </Button>
+      </div>
       
-      {/* Tool controls */}
       <div style={{ marginBottom: '1rem' }}>
         <Button 
           variant={mode === 'draw' ? 'contained' : 'outlined'} 
@@ -246,14 +309,22 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             <Button 
               variant={tool === 'freehand' ? 'contained' : 'outlined'} 
               onClick={() => setTool('freehand')}
+              style={{ marginRight: '16px' }}
             >
               FREEHAND
             </Button>
+            
+            <label style={{ marginLeft: '16px', marginRight: '8px', fontWeight: 'bold' }}>Color:</label>
+            <input 
+              type="color" 
+              value={annotationColor} 
+              onChange={(e) => setAnnotationColor(e.target.value)}
+              style={{ cursor: 'pointer', width: '50px', height: '35px', border: '1px solid #ccc', borderRadius: '4px' }}
+            />
           </>
         )}
       </div>
 
-      {/* PDF + Canvas - both in same scrollable container */}
       <div style={{ 
         maxHeight: '70vh', 
         overflow: 'auto', 
@@ -263,7 +334,6 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
         background: '#fafafa'
       }}>
         <div style={{ position: 'relative', minHeight: '400px' }}>
-          {/* PDF Viewer */}
           <PDFViewer
             pdfUrl={pdfUrl}
             pageNum={pageNum}
@@ -275,15 +345,14 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             setScale={setScale}
           />
           
-          {/* Canvas Overlay - positioned exactly over PDF */}
           {canvasWidth && canvasHeight && (
             <div style={{
               position: 'absolute',
               left: '50%',
               top: '62px',
               transform: 'translateX(-50%)',
-              width: actualCanvasWidth * scale,  // Scale the container
-              height: actualCanvasHeight * scale,  // Scale the container
+              width: actualCanvasWidth * scale,
+              height: actualCanvasHeight * scale,
               pointerEvents: 'auto',
               zIndex: 10
             }}>
@@ -295,14 +364,14 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
                 tool={tool}
                 width={actualCanvasWidth}
                 height={actualCanvasHeight}
-                scale={scale}  // PASS SCALE TO CANVAS
+                scale={scale}
+                color={annotationColor}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal - same as before */}
       <Dialog open={modalOpen} onClose={handleCloseModal} maxWidth="md" fullWidth>
         <DialogTitle>
           {selectedElement?.id ? 'Edit Annotation' : 'New Annotation'}
