@@ -22,6 +22,7 @@ class Element(Base):
     serial_number = Column(String)
     position = Column(String)
     internal_number = Column(String)
+    comment = Column(Text, nullable=True)
     photo = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

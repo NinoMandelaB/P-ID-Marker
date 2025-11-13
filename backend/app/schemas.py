@@ -19,6 +19,7 @@ class ElementBase(BaseModel):
     serial_number: str
     position: str
     internal_number: str
+    comment: Optional[str] = None
     overlay_x: float
     overlay_y: float
     overlay_page: int

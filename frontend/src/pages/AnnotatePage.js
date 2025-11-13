@@ -71,63 +71,66 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
   const actualCanvasHeight = canvasHeight || 1131;
   const currentPageElements = elements.filter(e => e.overlay_page === pageNum);
 
-  const handleExportCSV = () => {
-    if (elements.length === 0) {
-      alert("No annotations to export!");
-      return;
-    }
+ const handleExportCSV = () => {
+  if (elements.length === 0) {
+    alert("No annotations to export!");
+    return;
+  }
 
-    const headers = [
-      'ID',
-      'Type',
-      'Serial Number',
-      'Position',
-      'Internal Number',
-      'Page',
-      'Color',
-      'Overlay Type',
-      'X Position',
-      'Y Position',
-      'Width',
-      'Height',
-      'Created At',
-      'Updated At'
-    ];
+  const headers = [
+    'ID',
+    'Type',
+    'Serial Number',
+    'Position',
+    'Internal Number',
+    'Comment',  // NEW: Add comment
+    'Page',
+    'Color',
+    'Overlay Type',
+    'X Position',
+    'Y Position',
+    'Width',
+    'Height',
+    'Created At',
+    'Updated At'
+  ];
 
-    const rows = elements.map(e => [
-      e.id,
-      e.element_type || '',
-      e.serial_number || '',
-      e.position || '',
-      e.internal_number || '',
-      e.overlay_page || '',
-      e.overlay_color || '',
-      e.overlay_type || '',
-      e.overlay_x || '',
-      e.overlay_y || '',
-      e.width || '',
-      e.height || '',
-      e.created_at || '',
-      e.updated_at || ''
-    ]);
+  const rows = elements.map(e => [
+    e.id,
+    e.element_type || '',
+    e.serial_number || '',
+    e.position || '',
+    e.internal_number || '',
+    e.comment || '',  // NEW: Add comment
+    e.overlay_page || '',
+    e.overlay_color || '',
+    e.overlay_type || '',
+    e.overlay_x || '',
+    e.overlay_y || '',
+    e.width || '',
+    e.height || '',
+    e.created_at || '',
+    e.updated_at || ''
+  ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `annotations_${pdfDoc?.filename || 'export'}_${Date.now()}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `annotations_${pdfDoc?.filename || 'export'}_${Date.now()}.csv`);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 
   const handleDrawShape = (shape) => {
     setPendingShape(shape);
@@ -136,7 +139,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       element_type: '',
       serial_number: '',
       position: '',
-      internal_number: ''
+      internal_number: '',
+      comment: ''  // Add comment field
     });
     setModalOpen(true);
   };
@@ -156,7 +160,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       radius: pendingShape.tool === 'circle' ? Math.abs(pendingShape.width) / 2 : undefined,
       points: pendingShape.points || [],
       pid_doc_id: pdfDoc.id,
-      photo: null
+      photo: null,
+      comment: form.comment
     };
 
     try {
@@ -192,7 +197,8 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
       element_type: originalElement.element_type || '',
       serial_number: originalElement.serial_number || '',
       position: originalElement.position || '',
-      internal_number: originalElement.internal_number || ''
+      internal_number: originalElement.internal_number || '',
+      comment: originalElement.comment || ''
     });
     setModalOpen(true);
   };
@@ -410,6 +416,16 @@ export default function AnnotatePage({ pdfDoc, goBack }) {
             margin="normal"
             value={form.internal_number}
             onChange={e => setForm({ ...form, internal_number: e.target.value })}
+          />
+           <TextField
+            label="Comment"
+            fullWidth
+            margin="normal"
+            multiline
+            rows={3}
+            value={form.comment}
+            onChange={e => setForm({ ...form, comment: e.target.value })}
+            placeholder="Add notes or comments about this annotation..."
           />
 
           {selectedElement?.id && (
